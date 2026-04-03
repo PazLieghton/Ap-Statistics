@@ -1,0 +1,70 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Apr  3 17:36:10 2026
+
+@author: pazli
+"""
+
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Mar 31 11:48:14 2026
+
+@author: lucas
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.stats as stats
+
+
+N = 10000
+a = 0.1
+b = 4
+
+def Linear(x):
+    return a*x + b
+
+
+samples = []
+samples_cv = []
+for i in range(N):
+    u = stats.norm.rvs(loc=0, scale=1)      # X
+    u_cv = Linear(u)                        # Y = a*X + b
+    samples.append(u)
+    samples_cv.append(u_cv)
+
+
+bins = np.linspace(-2, b + 2, 300)
+
+plt.figure(1)
+plt.clf()
+plt.hist(samples, bins=bins)
+plt.hist(samples_cv, bins=bins)
+
+#%%
+
+# N = 100000
+
+# def f(x):
+#     return np.log(2*x)          # Y = log(X), X = e^Y, dx/dy = e^y
+
+
+# samples = []
+# samples_cv = []
+# for i in range(N):
+#     u = stats.uniform.rvs()           # X
+#     u_cv = f(u)                       # Y
+#     samples.append(u)
+#     samples_cv.append(u_cv)
+
+
+# plt.figure(1)
+# plt.clf()
+# #plt.hist(samples, bins=bins)
+# plt.hist(samples_cv, bins=100)
+
+
+#%%
+
+
+
