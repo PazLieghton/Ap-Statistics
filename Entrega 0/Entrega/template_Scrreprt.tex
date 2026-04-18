@@ -1,209 +1,153 @@
-\documentclass[12pt]{article}
+\documentclass[11pt]{article}
 \usepackage[utf8]{inputenc}
-\usepackage{amsmath, amssymb, amsthm}
+\usepackage{amsmath, amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{float}
+\usepackage[margin=1in]{geometry}
 \usepackage{caption}
 \usepackage{subcaption}
-\usepackage{hyperref}
-\usepackage{geometry}
-\geometry{margin=1in}
 
-\title{Bayes' Theorem in Manufacturing Quality Control:\\ From Exact Calculations to Monte Carlo Simulation}
-\author{Your Name}
-\date{\today}
+\title{\textbf{Programming Assignment 1- Bayesian Inference, Monte Carlo Simulations, and Poisson}}
+\author{by Paz Lieghton}
+\date{Made in LaTex - TexStudio}
 
 \begin{document}
 	
 	\maketitle
 	
 	\begin{abstract}
-		This report explores the application of Bayes' theorem in a manufacturing quality control setting. We consider a factory with three machines having different production shares and defect rates. Using the law of total probability and Bayes' theorem, we compute exact posterior probabilities for defective and non-defective items. These theoretical results are then verified through Monte Carlo simulation for a population of \(N = 100{,}000\) items, showing excellent agreement. The convergence of the simulation estimate for \(P(A \mid \text{defect})\) is studied as a function of sample size, revealing that \(N \approx 5{,}000\) suffices for an error below \(1\%\). Finally, the problem is extended to count data following a Poisson distribution, where we derive and interpret the posterior probability of a machine given the observed number of flaws. The report demonstrates the power of Bayes' theorem for updating beliefs and the reliability of Monte Carlo methods for approximating Bayesian posteriors.
+		This report analyzes a manufacturing scenario with three machines producing items at different defect rates for the first 3 parts of it...A,B,C. Exact Bayesian calculations are performed to obtain posterior probabilities of machine origin given defective or non-defective items. THen, a Monte Carlo simulation with \(N=100{,}000\) samples validates the theoretical results. We examine the Convergence of the simulation as a function of sample size. 
+		
+		Finally, the analysis is extended to a Poisson model for flaw counts in this case: For two machines, and the posterior probability of machine origin given a specific number of flaws is computed both analytically and via simulation.
 	\end{abstract}
 	
-	\section{Introduction}
+	\section{Initial conditions}
+	A factory uses three machines (A, B, C) with production shares of 20\%, 50\%, and 30\%, respectively. Their defect rates are 10\%, 2\%, and 5\%.:
+	\begin{enumerate}
+		\item Exact Bayesian calculation of the probability that a defective (or non-defective) item came from each machine.
+		\item Monte Carlo simulation to estimate these probabilities.
+		\item Analysis of convergence of the Monte Carlo estimate with increasing sample size.
+	\end{enumerate}
+	All computations were implemented in Python using NumPy, Matplotlib.
 	
-	In many industrial quality control problems, we are interested in the probability that a defective item came from a particular production line, given the overall defect rates and production volumes. Bayes' theorem provides a rigorous framework for reversing conditional probabilities. This report analyzes a concrete example: three machines \(A\), \(B\), and \(C\) with production shares 
+	\section{Part A: Exact Bayesian Calculation}
+	\subsection{Total Probability of Defect}
+	Let \(P(A)=0.20\), \(P(B)=0.50\), \(P(C)=0.30\) be the prior probabilities. The defect rates are:
 	\[
-	P(A)=0.20,\quad P(B)=0.50,\quad P(C)=0.30
+	P(\text{defect}|A)=0.10,\quad P(\text{defect}|B)=0.02,\quad P(\text{defect}|C)=0.05.
 	\]
-	and known defect rates 
+	By the law of total probability,
+	\begin{align*}
+		P(\text{defect}) &= P(\text{defect}|A)P(A) + P(\text{defect}|B)P(B) + P(\text{defect}|C)P(C) \\
+		&= 0.10\times0.20 + 0.02\times0.50 + 0.05\times0.30 = 0.045.
+	\end{align*}
+	
+	\subsection{Posterior Probabilities Given Defect (Bayes)}
+	Applying Bayes' theorem:
 	\[
-	P(\text{defect}\mid A)=0.10,\quad P(\text{defect}\mid B)=0.02,\quad P(\text{defect}\mid C)=0.05.
-	\]
-	We first compute exact posterior probabilities using Bayes' theorem. Then we simulate a large population of items to verify these results and study the convergence of Monte Carlo estimates. Finally, we extend the model to a Poisson-distributed flaw count, where the observation is no longer binary but a non‑negative integer.
-	
-	\section{Exact Bayesian Inference (Part A)}
-	
-	\subsection{Overall Defect Probability}
-	
-	The law of total probability gives the unconditional probability that a randomly selected item is defective:
-	\[
-	P(\text{defect}) = \sum_{X \in \{A,B,C\}} P(\text{defect}\mid X) P(X).
-	\]
-	Substituting the values:
-	\[
-	P(\text{defect}) = 0.10\times0.20 + 0.02\times0.50 + 0.05\times0.30 = 0.02 + 0.01 + 0.015 = 0.045.
-	\]
-	Thus, \(4.5\%\) of all produced items are defective.
-	
-	\subsection{Posterior Probabilities Given a Defective Item}
-	
-	Bayes' theorem yields:
-	\[
-	P(A\mid\text{defect}) = \frac{P(\text{defect}\mid A)P(A)}{P(\text{defect})}
-	= \frac{0.10\times0.20}{0.045} = \frac{0.02}{0.045} \approx 0.4444.
+	P(A|\text{defect}) = \frac{P(\text{defect}|A)P(A)}{P(\text{defect})} = \frac{0.10\times0.20}{0.045} \approx 0.4444.
 	\]
 	Similarly,
 	\[
-	P(B\mid\text{defect}) = \frac{0.02\times0.50}{0.045} = \frac{0.01}{0.045} \approx 0.2222,
+	P(B|\text{defect}) = \frac{0.02\times0.50}{0.045} \approx 0.2222,\qquad
+	P(C|\text{defect}) = \frac{0.05\times0.30}{0.045} \approx 0.3333.
 	\]
-	\[
-	P(C\mid\text{defect}) = \frac{0.05\times0.30}{0.045} = \frac{0.015}{0.045} \approx 0.3333.
-	\]
-	These three probabilities sum to \(1\), as required.
+	These have to sum to 1.
 	
-	\subsection{Posterior Probabilities Given a Non‑defective Item}
+	\subsection{Posterior Probabilities Given Non‑Defect}
+	The probability of a non‑defective item is \(P(\text{non‑defect})=1-0.045=0.955\). The conditional probabilities of non‑defect are \(0.90\), \(0.98\), and \(0.95\) for A, B, C, respectively. Then:
+	\begin{align*}
+		P(A|\text{non‑defect}) &= \frac{0.90\times0.20}{0.955} \approx 0.1885,\\
+		P(B|\text{non‑defect}) &= \frac{0.98\times0.50}{0.955} \approx 0.5131,\\
+		P(C|\text{non‑defect}) &= \frac{0.95\times0.30}{0.955} \approx 0.2984.
+	\end{align*}
+	All these values are extracted from the code.
 	
-	For a non‑defective item, we first compute \(P(\overline{\text{defect}}\mid X) = 1 - P(\text{defect}\mid X)\):
-	\[
-	P(\overline{\text{defect}}\mid A)=0.90,\; P(\overline{\text{defect}}\mid B)=0.98,\; P(\overline{\text{defect}}\mid C)=0.95.
-	\]
-	The overall probability of non‑defect is
-	\[
-	P(\overline{\text{defect}}) = 0.90\times0.20 + 0.98\times0.50 + 0.95\times0.30 = 0.18 + 0.49 + 0.285 = 0.955.
-	\]
-	Then,
-	\[
-	P(A\mid\overline{\text{defect}}) = \frac{0.90\times0.20}{0.955} \approx 0.1885,\quad
-	P(B\mid\overline{\text{defect}}) = \frac{0.98\times0.50}{0.955} \approx 0.5131,\quad
-	P(C\mid\overline{\text{defect}}) = \frac{0.95\times0.30}{0.955} \approx 0.2984.
-	\]
+	\subsection{Interpretation}
+	Machine B produces half of all items but has the lowest defect rate (2\%). Consequently, when a defective item is observed, it is less likely to have come from B (\(P(B|\text{defect})\approx 22.2\%\)) than from A (\(44.4\%\)) or C (\(33.3\%\)).
 	
-	\subsection{Intuitive Explanation}
+	\section{Part B: Monte Carlo Simulation}
+	A Monte Carlo simulation with \(N=100{,}000\) items was performed. Each item was assigned a machine according to the prior probabilities, and then its defect status was drawn from the corresponding defect rate. The fractions of defective and non‑defective items originating from each machine were computed.
 	
-	Machine \(B\) has the smallest defect rate (\(2\%\)). Although it produces half of all items, it contributes only \(0.01\) to the total defect probability \(0.045\). Therefore, when we observe a defective item, it is less likely to have come from \(B\) than from \(A\) or \(C\). This explains why \(P(B\mid\text{defect}) \approx 0.22\) is the smallest among the three.
-	
-	\section{Monte Carlo Simulation (Part B)}
-	
-	To verify the analytical results, we simulate a population of \(N = 100{,}000\) items. Each item is generated in two steps:
-	\begin{enumerate}
-		\item Sample the machine \(X \in \{A,B,C\}\) with probabilities \(0.20, 0.50, 0.30\).
-		\item Given the machine, generate a defect indicator using the machine's defect rate (Bernoulli trial).
-	\end{enumerate}
-	
-	The simulation (implemented in Python with NumPy) produced the following counts:
-	\begin{itemize}
-		\item Defective items: \(4{,}497\) (close to the expected \(4{,}500\)).
-		\item Non‑defective items: \(95{,}503\).
-	\end{itemize}
-	From these, the empirical posterior probabilities are:
-	\[
-	\hat{P}(A\mid\text{defect}) = 0.4443,\quad \hat{P}(B\mid\text{defect}) = 0.2228,\quad \hat{P}(C\mid\text{defect}) = 0.3329,
-	\]
-	\[
-	\hat{P}(A\mid\overline{\text{defect}}) = 0.1884,\quad \hat{P}(B\mid\overline{\text{defect}}) = 0.5132,\quad \hat{P}(C\mid\overline{\text{defect}}) = 0.2984.
-	\]
-	All values match the theoretical ones to within \(0.001\). Figure~\ref{fig:barchart} shows a side‑by‑side comparison; the agreement is excellent, confirming the correctness of both the analytical derivations and the simulation procedure.
-	
-	\begin{figure}[htbp]
+	\subsection{Simulation Results}
+	\begin{table}[H]
 		\centering
-		\includegraphics[width=0.8\textwidth]{barchart.png} % Placeholder for the generated bar chart
-		\caption{Comparison of theoretical and Monte Carlo posterior probabilities for defective (left) and non‑defective (right) items.}
-		\label{fig:barchart}
+		\begin{tabular}{lccc}
+			\toprule
+			& \(P(\cdot|\text{defect})\) & \(P(\cdot|\text{non‑defect})\) \\
+			\midrule
+			Machine A (theoretical) & 0.4444 & 0.1885 \\
+			Machine A (simulated)   & 0.455  & 0.185  \\
+			Machine B (theoretical) & 0.2222 & 0.5131 \\
+			Machine B (simulated)   & 0.223  & 0.517  \\
+			Machine C (theoretical) & 0.3333 & 0.2984 \\
+			Machine C (simulated)   & 0.322  & 0.298  \\
+			\bottomrule
+		\end{tabular}
+		\caption{Comparison of theoretical and simulated posterior probabilities.}
+	\end{table}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[height=15 cm]{barchart.png}
+		\caption{Theoretical vs.\ simulated probabilities given defect (left) and non‑defect (right). Its very close due to the large N, play with the code I provided :)}
+		\label{fig:bar}
 	\end{figure}
 	
-	\section{Convergence as a Function of \(N\) (Part C)}
+	\section{Part C: Convergence as a Function of \(N\)}
+	To study convergence, the Monte Carlo estimate of \(P(A|\text{defect})\) was computed for sample sizes \(N \in \{100, 500, 1000, 5000, 20000, 100000\}\). The absolute error from the exact value (0.4444) was recorded.
 	
-	Monte Carlo estimates improve with sample size. We repeated the simulation for \(N \in \{100, 500, 1{,}000, 5{,}000, 20{,}000, 100{,}000\}\) and recorded the estimated \(P(A\mid\text{defect})\). Figure~\ref{fig:convergence} plots these estimates (logarithmic scale on the \(x\)-axis) together with the exact value \(0.4444\).
+	\subsection{Convergence Plot}
+	Figure~\ref{fig:conv} displays the estimate versus \(N\) on a logarithmic scale. As \(N\) increases, the estimate stabilizes around the theoretical value.
 	
-	\begin{figure}[htbp]
+	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.7\textwidth]{convergence.png}
-		\caption{Convergence of the Monte Carlo estimate \(\hat{P}(A\mid\text{defect})\) with increasing sample size \(N\). The horizontal red line is the exact value.}
-		\label{fig:convergence}
+		\includegraphics[width=0.8\textwidth]{convergence.png}
+		\caption{Convergence of Monte Carlo estimate for \(P(A|\text{defect})\). The dashed red line marks the exact probability.}
+		\label{fig:conv}
 	\end{figure}
 	
-	We also computed the absolute error \(\epsilon(N) = |\hat{P}(A\mid\text{defect}) - 0.4444|\). The results are:
+	\subsection{Error Analysis}
+	The target absolute error was set to \(1\%\) of the exact value, i.e., \(0.004444\). For \(N=100{,}000\), the absolute error was approximately \(0.0115\), well above the threshold. None of the tested \(N\) values achieved an error below \(1\%\). However, if you play with the prvided code you can reach that threshold.
+	
+	\section{Part D: Extension to the Poisson Distribution}
+	Now suppose two machines (A and B) produce items with Poisson‑distributed flaw counts. Machine A accounts for 40\% of production with mean flaws \(\mu_A=3\); machine B accounts for 60\% with \(\mu_B=1\). The probability mass function is
 	\[
-	\begin{array}{c|c}
-		N & \epsilon(N) \\ \hline
-		100   & 0.0429 \\
-		500   & 0.0247 \\
-		1{,}000 & 0.0083 \\
-		5{,}000 & 0.0012 \\
-		20{,}000 & 0.0006 \\
-		100{,}000 & 0.0001
-	\end{array}
-	\]
-	The error drops below \(1\%\) (\(0.01\)) already at \(N = 1{,}000\). For a more conservative margin, \(N = 5{,}000\) gives an error of only \(0.12\%\). This demonstrates that even moderate sample sizes provide reliable Bayesian estimates in this setting.
-	
-	\section{Extension to Poisson‑Distributed Flaws (Part D)}
-	
-	We now consider a scenario where the number of flaws on an item follows a Poisson distribution. Two machines are present:
-	\begin{itemize}
-		\item Machine \(A\): produces \(40\%\) of items, flaw count \(\sim \text{Poisson}(\mu_A = 3)\).
-		\item Machine \(B\): produces \(60\%\) of items, flaw count \(\sim \text{Poisson}(\mu_B = 1)\).
-	\end{itemize}
-	For a randomly selected item, we observe exactly \(k\) flaws and wish to compute \(P(A \mid k \text{ flaws})\).
-	
-	\subsection{Poisson Probability Mass Function}
-	
-	The Poisson PMF is:
-	\[
-	P(X = k \mid \mu) = \frac{e^{-\mu} \mu^k}{k!}, \quad k = 0,1,2,\dots
-	\]
-	Thus,
-	\[
-	P(k \text{ flaws} \mid A) = \frac{e^{-3} 3^k}{k!}, \qquad
-	P(k \text{ flaws} \mid B) = \frac{e^{-1} 1^k}{k!} = \frac{e^{-1}}{k!}.
+	P(k|\mu) = \frac{\mu^k e^{-\mu}}{k!}.
 	\]
 	
-	\subsection{Bayesian Posterior}
-	
-	Applying Bayes' theorem:
+	\subsection{Bayesian Posterior for Flaw Count \(k\)}
+	Given an item with \(k\) flaws, the posterior probability that it came from machine A is
 	\[
-	P(A \mid k) = \frac{P(k\mid A) P(A)}{P(k\mid A)P(A) + P(k\mid B)P(B)}
-	= \frac{0.4 \cdot e^{-3} 3^k / k!}{0.4 \cdot e^{-3} 3^k / k! + 0.6 \cdot e^{-1} / k!}.
+	P(A|k) = \frac{P(k|A)P(A)}{P(k|A)P(A) + P(k|B)P(B)}.
 	\]
-	The factor \(1/k!\) cancels, giving:
-	\[
-	P(A \mid k) = \frac{0.4 e^{-3} 3^k}{0.4 e^{-3} 3^k + 0.6 e^{-1}}.
-	\]
+	Figure~\ref{fig:poisson} shows \(P(A|k)\) and \(P(B|k)\) for \(k=0,\dots,5\). As \(k\) increases, the evidence strongly favors machine A because of its higher mean flaw rate.
 	
-	\subsection{Numerical Evaluation and Trend}
-	
-	Evaluating for \(k = 0,1,\dots,5\):
-	\[
-	\begin{array}{c|c|c}
-		k & P(A \mid k) & P(B \mid k) \\ \hline
-		0 & 0.1784 & 0.8216 \\
-		1 & 0.3734 & 0.6266 \\
-		2 & 0.6180 & 0.3820 \\
-		3 & 0.8119 & 0.1881 \\
-		4 & 0.9211 & 0.0789 \\
-		5 & 0.9698 & 0.0302
-	\end{array}
-	\]
-	Figure~\ref{fig:poisson} shows the posterior probabilities as functions of \(k\). The probability that the item came from machine \(A\) increases monotonically with \(k\). This is intuitive: machine \(A\) has a higher average flaw rate (\(\mu_A = 3\)) than machine \(B\) (\(\mu_B = 1\)). Observing more flaws makes it increasingly likely that the item was produced by the machine with the higher flaw rate.
-	
-	\begin{figure}[htbp]
+	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.7\textwidth]{poisson.png}
-		\caption{Posterior probabilities \(P(A\mid k)\) and \(P(B\mid k)\) as a function of the observed number of flaws \(k\).}
+		\includegraphics[width=0.8\textwidth]{poisson.png}
+		\caption{Posterior probability of machine origin given \(k\) flaws.}
 		\label{fig:poisson}
 	\end{figure}
 	
-	\subsection{Monte Carlo Verification for \(k = 2\)}
-	
-	To further validate the analytical expression, we performed a Monte Carlo simulation with \(N = 200{,}000\) items. Each item was generated by first sampling the machine (A with probability \(0.4\), B with \(0.6\)) and then drawing a Poisson random variate with the corresponding mean. Among all items with exactly \(2\) flaws, we computed the proportion that came from machine \(A\). The simulation yielded:
+	\subsection{Monte Carlo Verification for \(k=2\)}
+	A simulation with \(N=200{,}000\) items was run.(Using the scipy library for the Poisson distribution) The analytical value for \(k=2\) is
 	\[
-	\hat{P}(A \mid k=2) = 0.6178,
+	P(A|k=2) = \frac{\frac{3^2 e^{-3}}{2!}\cdot 0.4}{\frac{3^2 e^{-3}}{2!}\cdot 0.4 + \frac{1^2 e^{-1}}{2!}\cdot 0.6} \approx 0.4481.
 	\]
-	while the theoretical value is \(0.6180\). The absolute error is \(0.0002\), again confirming the correctness of the derivation.
+	The simulation yielded \(0.449\) with an absolute error of \(0.001\), confirming the analytical result.
 	
 	\section{Conclusion}
+	Exact Bayesian calculations provide a clear interpretation of manufacturing defect data. Monte Carlo simulation accurately reproduces these probabilities and demonstrates convergence with increasing sample size. The Poisson extension illustrates how additional information (flaw counts) can dramatically update posterior beliefs. All code and figures are available for reproducibility ignore the seed.
+	P.S. Never leaving Latex code for the last day.
 	
-	This report has illustrated the power of Bayes' theorem in two different quality control contexts: binary defect indicators and Poisson‑distributed flaw counts. The exact posterior probabilities were derived analytically and then successfully verified using Monte Carlo simulation. The convergence study showed that even a few thousand samples provide estimates accurate to within \(1\%\). The Poisson extension demonstrated how the posterior probability shifts with the observed count, reflecting the underlying differences in the machines' flaw rates. These methods are widely applicable in industrial statistics, medical diagnosis, and any field where prior information must be updated with new observations.
 	
+	\section*{Sources}
+	\begin{itemize}
+		\item Python Graph Gallery. \textit{Matplotlib examples and reference}. \url{https://python-graph-gallery.com}
+		\item Cowan, Glen. \textit{Statistical Data Analysis}. Oxford University Press, 1998.
+		\item AI Assistance: DeepSeek was used for debugging complex Monte Carlo loop structures and Poisson likelihood derivations, specially Poisson.
+		\item Special Thanks to Guido Gornati, without his assistance this report would have been impossible to write in time.
+	\end{itemize}
 \end{document}
