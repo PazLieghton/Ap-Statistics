@@ -243,7 +243,7 @@ else:
     print("None of the tested N values achieved < 1% error")
 ########################################################################################
 
-from scipy.stats import poisson #Can use
+from scipy.stats import poisson #HAVE TO USE AND CAN 
 
 print("\n----------PART D: Extension to the Poisson Distribution-----------\n")
 
@@ -273,7 +273,7 @@ k_values = np.arange(0, 6)          # 0,1,2,3,4,5
 pmf_A = poisson.pmf(k_values, mu_A)   # P(k|A)
 pmf_B = poisson.pmf(k_values, mu_B)   # P(k|B)
 
-# Bayes' theorem numerator and denominator
+#Bayes theorem numerator and denominator calculatedd
 num = pmf_A * P_A
 den = pmf_A * P_A + pmf_B * P_B
 P_A_given_k = num / den
@@ -313,17 +313,21 @@ machines_D = np.random.choice(['A', 'B'], size=N_sim, p=[P_A, P_B])
 
 #Now instead of masking we apply the poisson
 flaws = np.zeros(N_sim, dtype=int)
-mask_A = (machines_D == 'A')
+
+mask_A = (machines_D == 'A') #We just maje the true false mask like I did previously and then apply the poisson for each
 mask_B = (machines_D == 'B')
 flaws[mask_A] = poisson.rvs(mu=mu_A, size=np.sum(mask_A))
 flaws[mask_B] = poisson.rvs(mu=mu_B, size=np.sum(mask_B))
 
 #Now exactly count the  = 2 flaws.
-mask_k2 = (flaws == 2)
-total_k2 = np.sum(mask_k2)
+mask_k2 = (flaws == 2) 
+total_k2 = np.sum(mask_k2) #Member: True = 1 we sum the long ass tuple
 A_k2 = np.sum((machines_D == 'A') & mask_k2)#Key
 
-sim_P_A_given_2 = A_k2 / total_k2 if total_k2 > 0 else 0.0  #Only way
+if total_k2 > 0:
+    sim_P_A_given_2 = A_k2 / total_k2
+#else:
+#    sim_P_A_given_2 = 0.0 #Just in case we get zero and we dont divide in zero (pointless)
 
 # Analytical value for k=2
 analytical_P_A_given_2 = P_A_given_k[2]   # from array computed above
