@@ -69,9 +69,10 @@ p_value = 1 - chi2_dist.cdf(chi2, nu) #the probability that a random Chi2
 
 print(f"[A.3]\n  chi2 = {chi2:.3f}  (expected nu = {nu})")
 print(f"  p-value = {p_value:.3f}")
-print("\nchi2 < nu: residue smaller than expected. Good precision p is biger than 0.05?")
-print("If i put sigma 0.2 it is chi2 Bigger than nu -> Sigma is too big??.")
+#print("\nchi2 < nu: residue smaller than expected. Good precision p is biger than 0.05?")
 #ASK this what changes when changing sigma, what is the critical point I guess
+print("A larger slope forces a smaller intercept to keep the line through the data,\n") 
+print("thus the parameters are anti-correlated\n")
 
 #A.4
 def linear(p, x):
@@ -108,8 +109,8 @@ plt.grid(True)
 plt.show()
 #%%
 #In matrix form: Var(ya) = |1 xa| * cov * |1 | #DELETE BEFORE SENDING
-#                                          |xa|
-#[B.1] Variance of predicted value at every xa - Got help for this one
+#                                         |xa|
+#[B.1] Variance of predicted value at every xa
 #Var(ya) = Var(a1) + xa²·Var(a2) + 2·xa·Cov(a1,a2)
 #cov[0,0] = Var(a1), cov[1,1] = Var(a2), cov_a1a2 = Cov(a1,a2)
 var_full = cov[0,0] + xa_vals**2 * cov[1,1] +2 * xa_vals * cov_a1a2 #correct way
@@ -159,7 +160,7 @@ plt.show()
 #Generated 1000 synthetic datasets, fit each, record chi2
 #If model is  correct chi 2 should follow chi2(nu=9)
 
-N_MC  = 10000000
+N_MC  = 1000
 #Each column is one synthetic experiment: y_mc shape is (11, 1000)
 y_mc  = np.random.normal(a1 + a2 * x[:, None], sigma, size=(n, N_MC))
 
@@ -172,8 +173,8 @@ a2_mc  = (S   * Sxy_mc - Sx * Sy_mc)  / Delta
 
 chi2_mc = np.sum(((y_mc - (a1_mc + a2_mc * x[:, None])) / sigma)**2, axis=0)
 
-# [C.1] Normalised histogram with Poisson errors vs theoretical pdf
-counts, edges = np.histogram(chi2_mc, bins=20)
+#[C.1].Normalised histogram with Poisson errors vs theoretical pdf
+counts, edges = np.histogram(chi2_mc, bins=100)
 bw  = edges[1] - edges[0]
 bc  = 0.5 * (edges[:-1] + edges[1:])
 plt.figure(4)
@@ -189,63 +190,62 @@ print("Wrong model -> histogram shifts right")
 
 #Comment on what  Does the simulation confirm that the chi-square statistic follows the expected distribution
 #################################################################################
-#################################################################################
 #%%
 # C.2 Bonus: Wrong model Monte Carlo we gottoreuse the dataset
-# Instead of fitting a line (correct), we fit a constant  y = c  (wrong model).
-# A constant ignores the slope entirely, so the residuals carry a systematic
-# contribution from a2*(xi - x_bar) on top of the noise.
-# The chi2 of the wrong fit should NOT follow chi2(nu_wrong = 10);
-# it should be shifted to the right by the non-centrality lambda = a2^2 * sum((xi-x_bar)^2) / sigma^2
+#Instead of fitting a line (correct), we fit a constant  y = c  (wrong model).
+#A constant ignores the slope entirely, so there is a contribtion
+#contribution from a2*(xi - x_bar)
+#The chi2 of the wrong fit should NOT follow chi2(nu_wrong = 10)
+#it should be shifted to the right by the non-centrality 
+#lambda = a2^2 * sum((xi-x_bar)^2) / sigma^2
 
-nu_wrong = n - 1   # 1 free parameter (the constant c), so nu = 11 - 1 = 10
+nu_wrong = n - 1   #n = 11 
 
-# Best-fit constant for each MC dataset = weighted mean = arithmetic mean (uniform weights)
-c_mc       = y_mc.mean(axis=0)                              # shape (N_MC,) one c per dataset
+c_mc       = y_mc.mean(axis=0)                             #shape (N_MC,) one c per dataset
 chi2_wrong = np.sum(((y_mc - c_mc) / sigma)**2, axis=0)    # shape (N_MC,)
 
-# Analytical prediction for the mean of chi2_wrong (non-central chi2)
-# E[chi2_wrong] = nu_wrong + lambda
-# lambda = a2^2 * sum((xi - x_bar)^2) / sigma^2
+#Analytical prediction for the mean of chi2 wrong (non central chi2)
+#E[chi2_wrong] = nu_wrong + lambda
+#lambda = a2^2 * sum((xi - x_bar)^2) / sigma^2 -> See Report
 lam_theory = a2**2 * np.sum((x - np.mean(x))**2) / sigma**2
 mean_theory = nu_wrong + lam_theory
 
-print(f"\n[C.2 Bonus] Wrong model (constant fit)")
-print(f"MC mean chi2   = {np.mean(chi2_wrong):.2f}  (theory: nu + lambda = {mean_theory:.2f})")
-print(f"MC std  chi2   = {np.std(chi2_wrong):.2f}")
+print("\n[C.2 Bonus] Wrong model (constant fit)")
+print(f"MC mean chi2 = {np.mean(chi2_wrong):.2f}  (theory: nu + lambda = {mean_theory:.2f})")
+print(f"MC std  chi2 ={np.std(chi2_wrong):.2f}")
 print(f"Correct model mean = {np.mean(chi2_mc):.2f} (expected nu = {nu})")
-print(f"Non-centrality lambda = {lam_theory:.2f}  <- the slope contribution")
 
-# Plot: two histograms side by side + their theoretical reference curves
-counts_w, edges_w = np.histogram(chi2_wrong, bins=25, range=(0, 55))
+#Plot [3.2]: two histograms side by side + their theoretical reference curves
+#Bins are going to be different than the pdf
+counts_w, edges_w = np.histogram(chi2_wrong, bins=50, range=(0, 55))
 bw_w = edges_w[1] - edges_w[0]
 bc_w = 0.5 * (edges_w[:-1] + edges_w[1:])
 
 xr = np.linspace(0, 55, 500)
-
-
 plt.figure(5)
+#The following plos is a huge conundrum of graphing magic and i hat to get aid for this.
+#Reminds me of doing large scale microcontroller control without an rtos.
 #Wrong model histogram
 plt.bar(bc_w, counts_w / (N_MC * bw_w), width=bw_w, alpha=0.55,
-        color="steelblue", label="MC chi2 — wrong model (constant fit)")
+        color="steelblue", label="MC chi2 Wrong model (constant fit)")
 plt.errorbar(bc_w, counts_w / (N_MC * bw_w),
              yerr=np.sqrt(counts_w) / (N_MC * bw_w),
              fmt="none", color="k", capsize=3)
-
-#Correct model histogram (replotted for comparison)
-counts_c, edges_c = np.histogram(chi2_mc, bins=20, range=(0, 30))
+#Correct model histogram (replotted for comparison from previous)
+counts_c, edges_c = np.histogram(chi2_mc, bins=50, range=(0, 30))
 bw_c = edges_c[1] - edges_c[0]
 bc_c = 0.5 * (edges_c[:-1] + edges_c[1:])
 plt.bar(bc_c, counts_c / (N_MC * bw_c), width=bw_c, alpha=0.45,
-        color="orange", label="MC chi2 — correct model (linear fit)")
+        color="orange", label="MC chi2 Correct model (linear fit)")
 
-#Theoretical chi2(nu_wrong) — what the wrong histogram WOULD look like if the model were correct
+#Theoretical chi2(nu_wrong) what the wrong histogram WOULD look like if the model were correct
+#Honestly unnecessary to plot this but it looks cool.
 plt.plot(xr, chi2_dist.pdf(xr, nu_wrong), "r--",
-         label=rf"$\chi^2(\nu={nu_wrong})$ — reference for constant fit")
+         label=rf"$\chi^2(\nu={nu_wrong})$ Reference for constant fit")
 
 #Theoretical chi2(nu) for the correct linear model
 plt.plot(xr, chi2_dist.pdf(xr, nu), "darkorange", linestyle=":",
-         label=rf"$\chi^2(\nu={nu})$ — correct linear model")
+         label=rf"$\chi^2(\nu={nu})$ Correct linear model")
 #The means are both marked
 plt.axvline(np.mean(chi2_wrong), color="steelblue", linestyle="--", alpha=0.8,
             label=f"Wrong model mean = {np.mean(chi2_wrong):.1f}")
