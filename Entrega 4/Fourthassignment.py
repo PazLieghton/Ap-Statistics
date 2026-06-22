@@ -30,36 +30,6 @@ import os
 if os.path.exists("plates.csv"):
     df = pd.read_csv("plates.csv", dtype=str)
     print("Loaded real data from plates.csv")
-else:
-    # -------------------------------------------------------------
-    # Synthetic fallback — DELETE or ignore when real data is ready.
-    # Generates a uniform-ish digit distribution so the test should
-    # FAIL to reject H0 (p > 0.05), which is the expected result.
-    # -------------------------------------------------------------
-    print("plates.csv not found — generating synthetic test data.")
-    rng = np.random.default_rng(42)
-
-    def random_plate(fmt):
-        digits = "".join(rng.choice(list("0123456789"), 3))
-        if fmt == "old":
-            letters = "".join(rng.choice(list("ABCDEFGHJKLMNOPQRSTUVWXYZ"), 3))
-        else:
-            letters = "".join(rng.choice(list("ABCDEFGHJKLMNOPQRSTUVWXYZ"), 4))
-        return digits, letters
-
-    rows = []
-    for i in range(1, 101):
-        fmt = "old" if i <= 60 else "new"
-        d, l = random_plate(fmt)
-        rows.append({"plate_id": i, "digits": d, "letters": l, "format": fmt})
-    for i in range(101, 151):
-        fmt = "new"
-        d, l = random_plate(fmt)
-        rows.append({"plate_id": i, "digits": d, "letters": l, "format": fmt})
-
-    df = pd.DataFrame(rows)
-    df.to_csv("plates.csv", index=False)  # save so other parts can reuse it
-
 
 # Separate by plate format right away
 old_df = df[df["format"] == "old"].copy().reset_index(drop=True)
